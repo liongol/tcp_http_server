@@ -7,9 +7,35 @@ using namespace std;
 #include <winsock2.h>
 #include <string.h>
 #include <time.h>
+#include <map>
+#include <string>
 
 #define PORT 8080
 #define MAX_CLIENTS 10
+
+// create a function, that given a string of GET/POST/... request, returns the map of query parameters
+// e.g. for "GET /?name=John&age=21 HTTP/1.1..." it should return a map with 2 entries: "name" -> "John" and "age" -> "21"
+// e.g. for "POST / HTTP/1.1... name=John&age=21" it should return a map with 2 entries: "name" -> "John" and "age" -> "21"
+
+map<string, string> parseQueryParameters(string request) {
+	map<string, string> result;
+	int start = request.find('?');
+	int end = request.find(' ', start);
+	string query = request.substr(start + 1, end - start - 1);
+	int pos = 0;
+	while (pos < query.length()) {
+		int eq = query.find('=', pos);
+		int amp = query.find('&', pos);
+		if (amp == -1) {
+			amp = query.length();
+		}
+		string key = query.substr(pos, eq - pos);
+		string value = query.substr(eq + 1, amp - eq - 1);
+		result[key] = value;
+		pos = amp + 1;
+	}
+	return result;
+}
 
 int main() {
 	WSADATA wsaData;
@@ -121,9 +147,11 @@ int main() {
 				}
 				else {
 					// Handle client request
-					// Parse the request and handle it accordingly
-					// ...
-					// Your code to handle the HTTP request goes here
+					
+					// Parse query parameters
+					map<string, string> queryParameters = parseQueryParameters(buffer);
+
+
 
 					printf("Received data from client: %s\n", buffer);
 
