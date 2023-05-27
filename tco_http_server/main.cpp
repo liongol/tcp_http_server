@@ -13,10 +13,6 @@ using namespace std;
 #define PORT 8080
 #define MAX_CLIENTS 10
 
-// create a function, that given a string of GET/POST/... request, returns the map of query parameters
-// e.g. for "GET /?name=John&age=21 HTTP/1.1..." it should return a map with 2 entries: "name" -> "John" and "age" -> "21"
-// e.g. for "POST / HTTP/1.1... name=John&age=21" it should return a map with 2 entries: "name" -> "John" and "age" -> "21"
-
 map<string, string> parseQueryParameters(string request) {
 	map<string, string> result;
 	int start = request.find('?');
@@ -35,6 +31,12 @@ map<string, string> parseQueryParameters(string request) {
 		pos = amp + 1;
 	}
 	return result;
+}
+
+string getVerb(string request) {
+	int start = 0;
+	int end = request.find(' ', start);
+	return request.substr(start, end - start);
 }
 
 int main() {
@@ -148,16 +150,41 @@ int main() {
 				else {
 					// Handle client request
 					
+					string response = "";
 					// Parse query parameters
 					map<string, string> queryParameters = parseQueryParameters(buffer);
 
+					string verb = getVerb(buffer);
+
+					if (verb == "GET")
+					{
+						// check if queryParameters contains the key "lang"
+						if (queryParameters.find("lang") != queryParameters.end())
+						{
+							// get the value associated with the key
+							string lang_val = queryParameters["lang"];
+
+							if (lang_val == "en")
+								// html in english
+								response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<html><body><h1>Hello, World!</h1></body></html>";
+							else if (lang_val == "fr")
+								// html in french
+								response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<html><body><h1>Bonjour, le monde!</h1></body></html>";
+							else if (lang_val == "he")
+								// html in hebrew
+								response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<html><body><h1>שלום, עולם!</h1></body></html>";
+							else
+								// no such language
+								response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<html><body><h1>Language not supported!</h1></body></html>";
+						}
+					}
 
 
 					printf("Received data from client: %s\n", buffer);
 
 					// Send response back to the client
-					const char* response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\nHello, World!";
-					send(sd, response, strlen(response), 0);
+					//const char* response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\nHello, World!";
+					send(sd, response.c_str(), response.length(), 0);
 				}
 			}
 		}
